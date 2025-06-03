@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Modern Calculator</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Segoe+UI&display=swap');
+
+    body {
+      margin: 0;
+      background: #e0e0e0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+
+    .calculator {
+      background:#242448;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      width: 360px;
+      padding: 24px;
+      display: grid;
+      grid-template-rows: minmax(80px, auto) 1fr;
+    }
+
+    .display {
+      background: #141422;
+      border-radius: 12px;
+      padding: 24px 16px;
+      font-size: 2.4rem;
+      text-align: right;
+      color: #e0e0e0;
+      letter-spacing: 1.2px;
+      box-shadow: inset 0 0 8px #000000aa;
+      user-select: none;
+      overflow-wrap: break-word;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .buttons {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-auto-rows: 64px;
+      gap: 16px;
+    }
+
+    button {
+      background: #3e3e5a;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.6rem;
+      color: #d0d0ff;
+      box-shadow: 0 4px 6px #161622;
+      cursor: pointer;
+      transition: background 0.3s ease, box-shadow 0.2s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
+    }
+
+    button:hover {
+      background: #565680;
+      box-shadow: 0 6px 10px #2a2a42;
+    }
+
+    button:active {
+      background: #242448;
+      box-shadow: inset 0 3px 6px #161622;
+    }
+
+    button.operator {
+      background: #ff6b6b;
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 4px 8px #a43030;
+    }
+
+    button.operator:hover {
+      background: #ff4c4c;
+      box-shadow: 0 6px 12px #a01f1f;
+    }
+
+    button.operator:active {
+      background: #b82a2a;
+      box-shadow: inset 0 3px 6px #700c0c;
+    }
+
+    button.span-two {
+      grid-column: span 2;
+    }
+
+    /* Responsive on smaller screens */
+    @media (max-width: 400px) {
+      .calculator {
+        width: 90vw;
+        padding: 16px;
+      }
+      .display {
+        font-size: 2rem;
+        padding: 16px 12px;
+        min-height: 64px;
+      }
+      button {
+        font-size: 1.4rem;
+        grid-auto-rows: 56px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator" role="application" aria-label="Calculator">
+    <div id="display" class="display" aria-live="polite" aria-atomic="true">0</div>
+    <div class="buttons">
+      <button type="button" id="clear" aria-label="Clear">C</button>
+      <button type="button" class="operator" data-operator="÷" aria-label="Divide">÷</button>
+      <button type="button" class="operator" data-operator="×" aria-label="Multiply">×</button>
+      <button type="button" class="operator" data-operator="−" aria-label="Subtract">−</button>
+
+      <button type="button" data-number="7" aria-label="7">7</button>
+      <button type="button" data-number="8" aria-label="8">8</button>
+      <button type="button" data-number="9" aria-label="9">9</button>
+      <button type="button" class="operator" data-operator="+" aria-label="Add">+</button>
+
+      <button type="button" data-number="4" aria-label="4">4</button>
+      <button type="button" data-number="5" aria-label="5">5</button>
+      <button type="button" data-number="6" aria-label="6">6</button>
+      <button type="button" id="equals" class="operator span-two" aria-label="Equals">=</button>
+
+      <button type="button" data-number="1" aria-label="1">1</button>
+      <button type="button" data-number="2" aria-label="2">2</button>
+      <button type="button" data-number="3" aria-label="3">3</button>
+
+      <button type="button" data-number="0" class="span-two" aria-label="0">0</button>
+      <button type="button" data-number="." aria-label="Decimal point">.</button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const display = document.getElementById('display');
+      let currentInput = '0';
+      let previousInput = null;
+      let operator = null;
+      let resultDisplayed = false;
+
+      function updateDisplay() {
+        display.textContent = currentInput;
+      }
+
+      function clearAll() {
+        currentInput = '0';
+        previousInput = null;
+        operator = null;
+        resultDisplayed = false;
+        updateDisplay();
+      }
+
+      function inputNumber(num) {
+        if (resultDisplayed) {
+          currentInput = num;
+          resultDisplayed = false;
+        } else {
+          if (currentInput === '0' && num !== '.') {
+            currentInput = num;
+          } else {
+            if (num === '.' && currentInput.includes('.')) {
+              return; // ignore second decimal
+            }
+            currentInput += num;
+          }
+        }
+        updateDisplay();
+      }
+
+      function inputOperator(op) {
+        if (operator && !resultDisplayed) {
+          compute();
+        }
+        previousInput = currentInput;
+        operator = op;
+        resultDisplayed = false;
+        currentInput = '0';
+      }
+
+      function compute() {
+        if (operator === null || previousInput === null) return;
+
+        const prev = parseFloat(previousInput);
+        const curr = parseFloat(currentInput);
+        let computation = 0;
+
+        switch (operator) {
+          case '+':
+            computation = prev + curr;
+            break;
+          case '−':
+            computation = prev - curr;
+            break;
+          case '×':
+            computation = prev * curr;
+            break;
+          case '÷':
+            if (curr === 0) {
+              alert("Error: Division by zero");
+              clearAll();
+              return;
+            }
+            computation = prev / curr;
+            break;
+          default:
+            return;
+        }
+        currentInput = computation.toString();
+        operator = null;
+        previousInput = null;
+        resultDisplayed = true;
+        updateDisplay();
+      }
+
+      // Event listeners
+      document.querySelectorAll('button[data-number]').forEach(button => {
+        button.addEventListener('click', () => {
+          inputNumber(button.getAttribute('data-number'));
+        });
+      });
+
+      document.querySelectorAll('button.operator').forEach(button => {
+        button.addEventListener('click', () => {
+          const op = button.getAttribute('data-operator');
+          if (op) {
+            inputOperator(op);
+          }
+        });
+      });
+
+      document.getElementById('equals').addEventListener('click', () => {
+        compute();
+      });
+
+      document.getElementById('clear').addEventListener('click', () => {
+        clearAll();
+      });
+
+      // Initialize display
+      updateDisplay();
+
+      // Keyboard support
+      window.addEventListener('keydown', (e) => {
+        if ((e.key >= '0' && e.key <= '9') || e.key === '.') {
+          e.preventDefault();
+          inputNumber(e.key);
+        } else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') {
+          e.preventDefault();
+          let keyOp = e.key;
+          if (keyOp === '*') keyOp = '×';
+          if (keyOp === '/') keyOp = '÷';
+          if (keyOp === '-') keyOp = '−';
+          inputOperator(keyOp);
+        } else if (e.key === 'Enter' || e.key === '=') {
+          e.preventDefault();
+          compute();
+        } else if (e.key === 'Backspace') {
+          e.preventDefault();
+          if (resultDisplayed || currentInput.length === 1) {
+            currentInput = '0';
+            resultDisplayed = false;
+          } else {
+            currentInput = currentInput.slice(0, -1);
+          }
+          updateDisplay();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          clearAll();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
+
